@@ -25,7 +25,6 @@ import json
 import time
 from controller.framework.ControllerModule import ControllerModule
 from collections import defaultdict
-from Queue import Queue
 
 try:
     import sleekxmpp
@@ -39,8 +38,10 @@ except:
 
 py_ver = sys.version_info[0]
 if py_ver == 3:
+    from queue import Queue
     import _thread as thread
 else:
+    from Queue import Queue
     import thread
 log_level = "info"
 
@@ -170,7 +171,7 @@ class XmppClient(ControllerModule):
             action = payload["action"]
             cbtdata = dict(uid=src_uid,data=payload['core_data'],interface_name = interface_name)
             self.log("cbtdata {}".format(cbtdata),"debug")
-            self.registerCBT(dest_module, action, cbtdata, _uid=src_uid)
+            self.registerCBT(dest_module, action, cbtdata, _tag=src_uid)
             self.log("Received forwarded CBT from {}".format(sender_jid),"debug")
             return
 
@@ -215,7 +216,7 @@ class XmppClient(ControllerModule):
         except:
             self.registerCBT("Logger", "info", "Key-ring module not installed.")
         xmpp_details = self.CMConfig.get("XmppDetails")
-        self.presence_publisher = self.CFxHandle.CreateSubscriptionSource("PEER_PRESENCE_NOTIFICATION")
+        self.presence_publisher = self.CFxHandle.PublishSubscription("PEER_PRESENCE_NOTIFICATION")
         xmpp_password = None
         # Iterate over the XMPP credentials for different virtual networks configured in ipop-config.json
         for i, xmpp_ele in enumerate(xmpp_details):

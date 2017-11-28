@@ -107,8 +107,8 @@ class LinkManager(ControllerModule):
         msg = {
             "peer_uid": uid,
             "interface_name": interface_name,
-            "ip4": link_data["ipop_state"]["_ip4"],
-            "fpr": link_data["ipop_state"]["_fpr"],
+            "ip4": link_data["ipop_state"]["ip4"],
+            "fpr": link_data["ipop_state"]["fpr"],
             "mac": link_data["mac"],
             "ttl": ttl
         }
@@ -155,9 +155,9 @@ class LinkManager(ControllerModule):
             response_msg = {
                 "uid": uid,
                 "interface_name": interface_name,
-                "fpr": self.link_details[interface_name]["ipop_state"]["_fpr"],
+                "fpr": self.link_details[interface_name]["ipop_state"]["fpr"],
                 "cas": data["cas"],
-                "ip4": self.link_details[interface_name]["ipop_state"]["_ip4"],
+                "ip4": self.link_details[interface_name]["ipop_state"]["ip4"],
                 "mac": self.link_details[interface_name]["mac"],
                 "peer_mac": data["peer_mac"]
             }
@@ -338,7 +338,7 @@ class LinkManager(ControllerModule):
                     interface_details["ipop_state"] = msg
                     interface_details["mac"] = msg["mac"]
                     self.registerCBT("Logger", "info","LM Local Node Info UID:{0} MAC:{1} IP4: {2}" \
-                      .format(msg["_uid"], msg["mac"], msg["_ip4"]))
+                      .format(msg["_uid"], msg["mac"], msg["ip4"]))
                     # update peer list
                 elif msg_type == "peer_state":
                     uid = msg["uid"]
@@ -395,10 +395,10 @@ class LinkManager(ControllerModule):
     def timer_method(self):
         try:
             # Iterate across various virtual networks
+            self.peers_lck.acquire()
             for interface_name in self.link_details.keys():
                 self.registerCBT("Logger","debug","Peer Nodes:: {0}".format(self.link_details[interface_name]["peers"]))
                 # Iterate over the Peer Table
-                self.peers_lck.acquire()
                 for peeruid in self.link_details[interface_name]["peers"].keys():
                     # Check whether the Peer MAC address has been obtained via XMPP
                     if self.link_details[interface_name]["peers"][peeruid]["mac"] != "":
@@ -410,8 +410,7 @@ class LinkManager(ControllerModule):
                         # Get P2P Link state
                         self.registerCBT('TincanInterface', 'DO_GET_STATE', message)
                         # Get P2P Link stats
-                        self.registerCBT('TincanInterface', 'DO_QUERY_TUNNEL_STATS', message)
-                self.peers_lck.release()
+                        self.registerCBT('TincanInterface', 'DO_QUERY_LINK_STATS', message)
                 # Check whether Local Node details have been obtained from Tincan, if not issue local 
                 # state message to Tincan
                 if "_uid" not in self.link_details[interface_name]["ipop_state"].keys():
@@ -420,6 +419,7 @@ class LinkManager(ControllerModule):
                 else:
                     self.clean_p2plinks(interface_name)
                     self.advertise_p2plinks(interface_name)
+            self.peers_lck.release()
         except Exception as err:
             self.peers_lck.release()
             self.registerCBT('Logger', 'error', "Exception caught in LinkManager timer thread.\

@@ -239,8 +239,8 @@ class BaseTopologyManager(ControllerModule, CFX):
                 vnet_details = self.ipop_vnets_details[interface_name]
                 local_uid, local_ip = "", ""
                 if vnet_details["p2p_state"] == "connected" and "ipop_state" in vnet_details.keys():
-                    local_uid = vnet_details["ipop_state"]["_uid"]
-                    local_ip = vnet_details["ipop_state"]["_ip4"]
+                    local_uid = vnet_details["ipop_state"]["uid"]
+                    local_ip = vnet_details["ipop_state"]["ip4"]
                 successors = []
 
                 # Iterate over the IP-UID Table to retrieve Unmanaged node IP list
